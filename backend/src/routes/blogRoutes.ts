@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { verify } from "hono/jwt";
-import { createBlogInputSchema, updateBlogInputSchema } from "@aneesazc/medium-blog";
+import {createBlogInputSchema, updateBlogInputSchema} from "@aneesazc/backend-blog";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -43,7 +43,9 @@ blogRouter.post("/blog", async (c) => {
   }).$extends(withAccelerate());
 
   const body = await c.req.json();
+  console.log(body);
   const { success } = createBlogInputSchema.safeParse(body);
+  console.log(success);
   if (!success) {
     c.status(411);
     return c.json({ error: "invalid inputs" });
@@ -54,7 +56,7 @@ blogRouter.post("/blog", async (c) => {
       data: {
         title: body.title,
         content: body.content,
-        published: body.published,
+        published: body.published? body.published : false,
         authorId: userId,
       },
     });
@@ -107,7 +109,18 @@ blogRouter.get("/blog/bulk", async (c) => {
     }).$extends(withAccelerate());
   
     try {
-      const posts = await prisma.post.findMany();
+      const posts = await prisma.post.findMany({
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          author: {
+            select: {
+              name: true,
+            },
+          },
+        }
+      });
       console.log(posts);
       if (!posts) {
         c.status(404);
@@ -138,6 +151,16 @@ blogRouter.get("/blog/:id", async (c) => {
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        author: {
+          select: {
+            name: true,
+          },
+        }
+      }
     });
 
     if (!post) {

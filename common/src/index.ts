@@ -15,10 +15,10 @@ export const createBlogInputSchema = z.object({
     title: z.string(),
     content: z.string(),
     published: z.boolean().optional(),
-    authorId: z.string()
 })
 
 export const updateBlogInputSchema = z.object({
+    id: z.string(),
     title: z.string().optional(),
     content: z.string().optional(),
     published: z.boolean().optional(),
